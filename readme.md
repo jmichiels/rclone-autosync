@@ -36,7 +36,7 @@ Wants=network.target
 After=network.target
 
 [Service]
-ExecStart=/path/to/rclone-autosync remote_name:remote_path local_path
+ExecStart=/bin/zsh -c "rclone-autosync remote_name:remote_path local_path"
 KillSignal=SIGINT
 
 [Install]
