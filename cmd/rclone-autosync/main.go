@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/fs"
 	"log"
@@ -11,24 +12,35 @@ import (
 	"time"
 )
 
-const (
-	errorRetryDelay          = time.Minute
-	downSyncPeriod           = time.Minute
-	localCheckPeriod         = time.Second
-	localChangeDebounceDelay = 5 * time.Second
+var (
+	rcloneCmd                string
+	errorRetryDelay          time.Duration
+	remoteCheckPeriod        time.Duration
+	localCheckPeriod         time.Duration
+	localChangeDebounceDelay time.Duration
 )
+
+func init() {
+	flag.StringVar(&rcloneCmd, "rclone", "rclone", "rclone command")
+	flag.DurationVar(&errorRetryDelay, "error-retry-delay", time.Minute, "delay before retries on error")
+	flag.DurationVar(&remoteCheckPeriod, "remote-check-period", time.Minute, "period for remote file system checks")
+	flag.DurationVar(&localCheckPeriod, "local-check-period", time.Second, "period for local file system checks")
+	flag.DurationVar(&localChangeDebounceDelay, "local-change-debounce-delay", 5*time.Second, "debounce delay after change detection")
+}
 
 type config struct {
 	remotePath, localPath string
 }
 
 func parseArgs() (*config, error) {
-	if len(os.Args) != 3 {
+	flag.Parse()
+	args := flag.Args()
+	if len(args) != 2 {
 		return nil, fmt.Errorf("invalid number of arguments")
 	}
 	return &config{
-		remotePath: os.Args[1],
-		localPath:  os.Args[2],
+		remotePath: args[0],
+		localPath:  args[1],
 	}, nil
 }
 
@@ -57,7 +69,7 @@ func run(cfg *config) error {
 	if err := syncUp(cfg); err != nil {
 		return err
 	}
-	downSyncTicker := time.NewTicker(downSyncPeriod)
+	downSyncTicker := time.NewTicker(remoteCheckPeriod)
 	defer downSyncTicker.Stop()
 	localCheckTicker := time.NewTicker(localCheckPeriod)
 	defer localCheckTicker.Stop()
@@ -106,7 +118,7 @@ func run(cfg *config) error {
 }
 
 func sync(from, to string) error {
-	cmd := exec.Command(`rclone`, `sync`, from, to, `--stats-log-level`, `DEBUG`, `-v`)
+	cmd := exec.Command(rcloneCmd, `sync`, from, to, `--stats-log-level`, `DEBUG`, `-v`)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
