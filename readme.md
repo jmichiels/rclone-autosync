@@ -26,8 +26,7 @@ go install github.com/jmichiels/rclone-autosync/cmd/rclone-autosync@latest
 
 **Configure a [systemd](https://www.freedesktop.org/wiki/Software/systemd/) service**
 
-Change `remote_name`, `remote_path`, and `local_path` as you wish, and create a new systemd user service file in
-`~/.config/systemd/user/rclone-autosync.service`:
+Create a new systemd user service file in `~/.config/systemd/user/rclone-autosync.service`. Fix the paths as required.
 
 ```
 [Unit]
@@ -36,7 +35,7 @@ Wants=network.target
 After=network.target
 
 [Service]
-ExecStart=/bin/zsh -c "rclone-autosync remote_name:remote_path local_path"
+ExecStart=/home/user/go/bin/rclone-autosync --rclone /path/to/rclone remote-name:/remote/path/ /local/path/
 KillSignal=SIGINT
 
 [Install]
